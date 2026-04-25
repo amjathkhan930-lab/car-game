@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pro Car Racing</title>
+
+<style>
+body { margin:0; font-family:Arial; background:black; overflow:hidden; }
+
+/* MENU */
+#menu {
+  position:absolute;
+  width:100%;
+  height:100vh;
+  background:black;
+  color:white;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+}
+
+#gameArea {
+  display:none;
+  width:320px;
+  height:100vh;
+  margin:auto;
+  position:relative;
+  overflow:hidden;
+  background:#222;
+}
+
+/* ROAD */
+.line {
+  width:10px; height:100px;
+  background:white;
+  position:absolute;
+  left:155px;
+}
+
+/* PLAYER */
+.car {
+  width:60px;
+  position:absolute;
+  bottom:20px;
+  left:130px;
+}
+
+/* ENEMY */
+.enemy {
+  width:60px;
+  position:absolute;
+  top:-120px;
+}
+
+/* UI */
+#score { position:absolute; top:10px; left:10px; color:white; }
+#nitroBtn {
+  position:fixed;
+  bottom:20px;
+  right:20px;
+  padding:15px;
+  font-size:16px;
+  background:red;
+  color:white;
+  border:none;
+  border-radius:50%;
+}
+</style>
+</head>
+
+<body>
+
+<div id="menu">
+  <h1>🚗 Pro Racing Game</h1>
+  <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="gameArea">
+  <div id="score">Score:0</div>
+  <img id="playerCar" class="car"
+   src="https://i.imgur.com/7QZ7Q9Z.png">
+</div>
+
+<button id="nitroBtn" onclick="nitro()">🔥</button>
+
+<!-- SOUND -->
+<audio id="engine" src="https://www.soundjay.com/transportation/car-engine-1.mp3" loop></audio>
+<audio id="crash" src="https://www.soundjay.com/mechanical/crash.mp3"></audio>
+
+<script>
+let gameArea = document.getElementById("gameArea");
+let menu = document.getElementById("menu");
+let playerCar = document.getElementById("playerCar");
+let scoreEl = document.getElementById("score");
+
+let score=0, speed=5, running=false, pos=130;
+
+// START
+function startGame(){
+  menu.style.display="none";
+  gameArea.style.display="block";
+  document.getElementById("engine").play();
+  running=true;
+}
+
+// TOUCH CONTROL
+gameArea.addEventListener("touchmove", e=>{
+  pos = e.touches[0].clientX - 50;
+  if(pos<0) pos=0;
+  if(pos>260) pos=260;
+  playerCar.style.left = pos+"px";
+});
+
+// ROAD
+for(let i=0;i<5;i++){
+  let line=document.createElement("div");
+  line.classList.add("line");
+  line.style.top=(i*150)+"px";
+  gameArea.appendChild(line);
+}
+
+function moveRoad(){
+  document.querySelectorAll(".line").forEach(l=>{
+    let t=parseInt(l.style.top);
+    t+=speed;
+    if(t>window.innerHeight) t=-100;
+    l.style.top=t+"px";
+  });
+}
+
+// ENEMY
+function enemySpawn(){
+  if(!running) return;
+
+  let e=document.createElement("img");
+  e.src="https://i.imgur.com/8QZ8Q8Z.png";
+  e.classList.add("enemy");
+  e.style.left=Math.random()*260+"px";
+  gameArea.appendChild(e);
+
+  let top=-120;
+
+  function move(){
+    if(!running) return;
+    top+=speed;
+    e.style.top=top+"px";
+
+    let p=playerCar.getBoundingClientRect();
+    let er=e.getBoundingClientRect();
+
+    if(p.left<er.right && p.right>er.left &&
+       p.top<er.bottom && p.bottom>er.top){
+        crash();
+    }
+
+    if(top<window.innerHeight){
+      requestAnimationFrame(move);
+    } else {
+      e.remove();
+      score++;
+      scoreEl.innerText="Score:"+score;
+    }
+  }
+  move();
+}
+
+setInterval(enemySpawn,1000);
+
+// NITRO
+function nitro(){
+  speed += 5;
+  setTimeout(()=> speed -=5,2000);
+}
+
+// CRASH
+function crash(){
+  running=false;
+  document.getElementById("engine").pause();
+  document.getElementById("crash").play();
+  alert("Game Over Score:"+score);
+  location.reload();
+}
+
+// LOOP
+function loop(){
+  if(running) moveRoad();
+  requestAnimationFrame(loop);
+}
+loop();
+</script>
+
+</body>
+</html>
